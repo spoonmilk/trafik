@@ -1,9 +1,4 @@
-# eBPF-CCP Congestion Control
-
-> [!NOTE]
-> This project is now legacy, as it was mainly created as proof-of-viability
-> for my current research. More to come for eBPF/congestion control, though!
-> - Alex
+# TRAFIK!
 
 ## Dependencies
 

@@ -9,11 +9,11 @@ fi
 
 echo "Attempting to cleanup"
 
-DAEMON_PID=$(pgrep -f "ebpf-ccp-gen" || true)
+DAEMON_PID=$(pgrep -f "ebpf-ccp-generic" || true)
 if [ -n "$DAEMON_PID" ]; then
     echo "Stopping running PID: $DAEMON_PID)"
     kill -TERM "$DAEMON_PID" 2>/dev/null || true
-    sudo bpftool struct_ops unregister name ebpfccp
+    sudo bpftool struct_ops unregister name ebpf_ccp_gen
 
     for i in {1..10}; do
         if ! kill -0 "$DAEMON_PID" 2>/dev/null; then

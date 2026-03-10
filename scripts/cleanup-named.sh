@@ -9,7 +9,7 @@ fi
 
 echo "Attempting to cleanup"
 
-DAEMON_PID=$(pgrep -f "ebpf-ccp-cubic" || true)
+DAEMON_PID=$(pgrep -f "ebpf-ccp-generic" || true)
 if [ -n "$DAEMON_PID" ]; then
     echo "Stopping running PID: $DAEMON_PID)"
     kill -TERM "$DAEMON_PID" 2>/dev/null || true

@@ -23,7 +23,8 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y install \
     llvm \
     libbpf-dev \
     bpfcc-tools \
-    python3-bpfcc
+    python3-bpfcc \
+    bpftool
 
 # Network tools
 sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y install \
@@ -94,4 +95,14 @@ fi
 
 clang --version
 bpftool --version
+
+# Install Rust via rustup
+echo "Installing Rust toolchain..."
+if ! command -v cargo &>/dev/null; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+    source "$HOME/.cargo/env"
+else
+    echo "Rust already installed: $(cargo --version)"
+fi
+cargo --version
 
