@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use crate::bpf::DatapathEvent;
 use anyhow::anyhow;
-use ebpf_ccp_generic::{FlowKey, GenericAlgorithm, GenericFlow, Report};
+use ebpf_ccp_generic::GenericAlgorithm;
 use tracing::{debug, info, warn};
 
 use crate::algorithms::{AlgorithmRunner, CwndUpdate};
 
 struct FlowState {
-    flow: Box<dyn GenericFlow>,
+    flow: Box<dyn ebpf_ccp_generic::GenericFlow>,
     last_lost_pkts: u32,
     last_cwnd: u32,
 }
@@ -16,17 +16,17 @@ struct FlowState {
 pub struct GenericRunner<A: GenericAlgorithm> {
     algorithm: A,
     flows: HashMap<u64, FlowState>,
-    init_cwnd: u32,
-    mss: u32,
+    ebpf_path: &'static str,
+    struct_ops_name: &'static str,
 }
 
 impl<A: GenericAlgorithm> GenericRunner<A> {
-    pub fn new(algorithm: A, init_cwnd: u32, mss: u32) -> Self {
+    pub fn new(algorithm: A, ebpf_path: &'static str, struct_ops_name: &'static str) -> Self {
         Self {
             algorithm,
             flows: HashMap::new(),
-            init_cwnd,
-            mss,
+            ebpf_path,
+            struct_ops_name,
         }
     }
 }
@@ -37,17 +37,14 @@ impl<A: GenericAlgorithm> AlgorithmRunner for GenericRunner<A> {
     }
 
     fn ebpf_path(&self) -> &str {
-        "ebpf/.output/generic.bpf.o"
+        self.ebpf_path
     }
 
     fn struct_ops_name(&self) -> &str {
-        "ebpf_ccp_gen"
+        self.struct_ops_name
     }
 
-    fn handle_event(
-        &mut self,
-        event: crate::bpf::DatapathEvent,
-    ) -> anyhow::Result<Option<super::CwndUpdate>> {
+    fn handle_event(&mut self, event: DatapathEvent) -> anyhow::Result<Option<CwndUpdate>> {
         match event {
             DatapathEvent::FlowCreated {
                 flow_id,
@@ -58,9 +55,8 @@ impl<A: GenericAlgorithm> AlgorithmRunner for GenericRunner<A> {
                     "Flow created: {:016x}, init_cwnd={} bytes, mss={} bytes",
                     flow_id, init_cwnd, mss
                 );
-                let new_flow = self.algorithm.create_flow(init_cwnd, mss);
                 let flow_state = FlowState {
-                    flow: new_flow,
+                    flow: self.algorithm.create_flow(init_cwnd, mss),
                     last_lost_pkts: 0,
                     last_cwnd: init_cwnd,
                 };
@@ -77,46 +73,10 @@ impl<A: GenericAlgorithm> AlgorithmRunner for GenericRunner<A> {
                     .get_mut(&flow_id)
                     .ok_or_else(|| anyhow!("Unknown flow {}", flow_id))?;
 
-                let flow_key = FlowKey {
-                    saddr: measurement.flow.saddr,
-                    daddr: measurement.flow.daddr,
-                    sport: measurement.flow.sport,
-                    dport: measurement.flow.dport,
-                };
-
-                // Convert Measurement → Report
-                let report = Report {
-                    flow_key,
-
-                    // Flow statistics
-                    packets_in_flight: measurement.flow_stats.packets_in_flight,
-                    bytes_in_flight: measurement.flow_stats.bytes_in_flight,
-                    bytes_pending: measurement.flow_stats.bytes_pending,
-                    rtt_sample_us: measurement.flow_stats.rtt_sample_us,
-                    was_timeout: measurement.flow_stats.was_timeout != 0,
-
-                    // ACK statistics
-                    bytes_acked: measurement.ack_stats.bytes_acked,
-                    packets_acked: measurement.ack_stats.packets_acked,
-                    bytes_misordered: measurement.ack_stats.bytes_misordered,
-                    packets_misordered: measurement.ack_stats.packets_misordered,
-                    ecn_bytes: measurement.ack_stats.ecn_bytes,
-                    ecn_packets: measurement.ack_stats.ecn_packets,
-                    lost_pkts_sample: measurement.ack_stats.lost_pkts_sample,
-
-                    // Kernel context
-                    snd_cwnd: measurement.snd_cwnd,
-                    snd_ssthresh: measurement.snd_ssthresh,
-                    pacing_rate: measurement.pacing_rate,
-                    ca_state: measurement.ca_state,
-                    now: measurement.ack_stats.now,
-                    rate_incoming: measurement.rates.rate_incoming,
-                    rate_outgoing: measurement.rates.rate_outgoing,
-                };
+                let report = measurement.to_report();
 
                 // lost_pkts_sample is cumulative (tp->lost_out), not incremental
                 let new_loss = report.lost_pkts_sample > flow_state.last_lost_pkts;
-
                 let old_cwnd = flow_state.flow.curr_cwnd();
 
                 if report.was_timeout {
@@ -131,7 +91,6 @@ impl<A: GenericAlgorithm> AlgorithmRunner for GenericRunner<A> {
                     flow_state.last_lost_pkts = report.lost_pkts_sample;
                 } else if report.bytes_acked > 0 {
                     flow_state.flow.increase(&report);
-                    // Reset loss counter when all losses are recovered
                     if report.lost_pkts_sample == 0 {
                         flow_state.last_lost_pkts = 0;
                     }
@@ -152,7 +111,6 @@ impl<A: GenericAlgorithm> AlgorithmRunner for GenericRunner<A> {
                     );
                 }
 
-                // Only send update if cwnd actually changed
                 if new_cwnd != flow_state.last_cwnd || pacing_rate.is_some() {
                     flow_state.last_cwnd = new_cwnd;
                     Ok(Some(CwndUpdate {

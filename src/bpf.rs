@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use ebpf_ccp_generic::FlowKey;
+use ebpf_ccp_generic::{FlowKey, Report};
 use lazy_static::lazy_static;
 use libbpf_rs::{Link, MapCore, MapFlags, Object, ObjectBuilder, RingBufferBuilder};
 use std::collections::{HashMap, VecDeque};
@@ -61,6 +61,38 @@ pub struct Measurement {
 pub struct FlowRates {
     pub rate_incoming: u32,
     pub rate_outgoing: u32,
+}
+
+impl Measurement {
+    pub fn to_report(&self) -> Report {
+        Report {
+            flow_key: FlowKey {
+                saddr: self.flow.saddr,
+                daddr: self.flow.daddr,
+                sport: self.flow.sport,
+                dport: self.flow.dport,
+            },
+            packets_in_flight: self.flow_stats.packets_in_flight,
+            bytes_in_flight: self.flow_stats.bytes_in_flight,
+            bytes_pending: self.flow_stats.bytes_pending,
+            rtt_sample_us: self.flow_stats.rtt_sample_us,
+            was_timeout: self.flow_stats.was_timeout != 0,
+            bytes_acked: self.ack_stats.bytes_acked,
+            packets_acked: self.ack_stats.packets_acked,
+            bytes_misordered: self.ack_stats.bytes_misordered,
+            packets_misordered: self.ack_stats.packets_misordered,
+            ecn_bytes: self.ack_stats.ecn_bytes,
+            ecn_packets: self.ack_stats.ecn_packets,
+            lost_pkts_sample: self.ack_stats.lost_pkts_sample,
+            rate_incoming: self.rates.rate_incoming,
+            rate_outgoing: self.rates.rate_outgoing,
+            snd_cwnd: self.snd_cwnd,
+            snd_ssthresh: self.snd_ssthresh,
+            pacing_rate: self.pacing_rate,
+            ca_state: self.ca_state,
+            now: self.ack_stats.now,
+        }
+    }
 }
 
 #[repr(C)]

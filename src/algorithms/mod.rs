@@ -24,36 +24,43 @@ pub trait AlgorithmRunner: Send {
 pub struct CwndUpdate {
     pub flow_id: u64,
     pub cwnd_bytes: u32,
-    pub pacing_rate: Option<u64>, // Optional pacing rate (bytes/sec)
+    pub pacing_rate: Option<u64>,
 }
 
 pub struct AlgorithmRegistry;
 
 impl AlgorithmRegistry {
-    pub fn get(name: &str, init_cwnd_pkts: u32, mss: u32) -> Result<Box<dyn AlgorithmRunner>> {
+    pub fn get(name: &str) -> Result<Box<dyn AlgorithmRunner>> {
         match name {
-            "cubic" => Ok(Box::new(cubic::CubicRunner::new(init_cwnd_pkts, mss))),
-            "reno" => Ok(Box::new(reno::RenoRunner::new(init_cwnd_pkts, mss))),
+            "cubic" => Ok(Box::new(generic_runner::GenericRunner::new(
+                cubic::CubicAlgorithm,
+                "ebpf/.output/datapath-cubic.bpf.o",
+                "ebpf_ccp_cubic",
+            ))),
+            "reno" => Ok(Box::new(generic_runner::GenericRunner::new(
+                reno::RenoAlgorithm,
+                "ebpf/.output/datapath-reno.bpf.o",
+                "ebpf_ccp_reno",
+            ))),
             "generic-cubic" => Ok(Box::new(generic_runner::GenericRunner::new(
                 cubic::CubicAlgorithm,
-                init_cwnd_pkts * mss, // Convert packets to bytes
-                mss,
+                "ebpf/.output/generic.bpf.o",
+                "ebpf_ccp_gen",
             ))),
             "generic-reno" => Ok(Box::new(generic_runner::GenericRunner::new(
                 reno::RenoAlgorithm,
-                init_cwnd_pkts * mss, // Convert packets to bytes
-                mss,
+                "ebpf/.output/generic.bpf.o",
+                "ebpf_ccp_gen",
             ))),
             "generic-bbr" => Ok(Box::new(generic_runner::GenericRunner::new(
                 bbr::BbrAlgorithm,
-                init_cwnd_pkts * mss, // Convert packets to bytes
-                mss,
+                "ebpf/.output/generic.bpf.o",
+                "ebpf_ccp_gen",
             ))),
             _ => anyhow::bail!("Unknown algorithm: {}", name),
         }
     }
 
-    /// List all available algorithms
     pub fn list() -> Vec<&'static str> {
         vec![
             "cubic",

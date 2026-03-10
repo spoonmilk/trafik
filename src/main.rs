@@ -17,14 +17,6 @@ struct Args {
     #[arg(short, long, default_value = "cubic")]
     algorithm: String,
 
-    /// Initial congestion window in packets
-    #[arg(long, default_value = "10")]
-    init_cwnd_pkts: u32,
-
-    /// Maximum segment size in bytes
-    #[arg(long, default_value = "1448")]
-    mss: u32,
-
     /// Enable verbose debug logging
     #[arg(short, long)]
     verbose: bool,
@@ -53,12 +45,10 @@ fn main() -> Result<()> {
         .init();
 
     // Get the algorithm implementation
-    let mut algorithm = AlgorithmRegistry::get(&args.algorithm, args.init_cwnd_pkts, args.mss)?;
+    let mut algorithm = AlgorithmRegistry::get(&args.algorithm)?;
 
     info!("Starting eBPF congestion control");
     info!("  algorithm: {}", algorithm.name());
-    info!("  init_cwnd: {} packets", args.init_cwnd_pkts);
-    info!("  mss: {} bytes", args.mss);
     info!("  ebpf_path: {}", algorithm.ebpf_path());
 
     let running = Arc::new(AtomicBool::new(true));
@@ -104,9 +94,7 @@ fn main() -> Result<()> {
                         error!("Failed to update flow {:016x}: {:?}", update.flow_id, e);
                     }
                 }
-                Ok(None) => {
-                    // No update needed
-                }
+                Ok(None) => {}
                 Err(e) => {
                     error!("Algorithm error: {}", e);
                 }
