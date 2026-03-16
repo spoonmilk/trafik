@@ -1,0 +1,23 @@
+[package]
+name = "trafik-runtime"
+version = "0.1.0"
+edition.workspace = true
+
+[[bin]]
+name = "ebpf-ccp-generic"
+path = "main.rs"
+
+[lib]
+name = "trafik_runtime"
+path = "lib.rs"
+
+[dependencies]
+anyhow.workspace = true
+aya = "0.13.1"
+clap = { version = "4.4", features = ["derive"] }
+ctrlc = "3.4"
+lazy_static = "1.5.0"
+libbpf-rs = "0.25.0"
+libbpf-sys = "1.6.2"
+tracing = "0.1.41"
+tracing-subscriber = "0.3"

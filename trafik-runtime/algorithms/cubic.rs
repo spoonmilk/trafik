@@ -1,6 +1,6 @@
 //! CUBIC congestion control algorithm implementation
 
-use ebpf_ccp_generic::{GenericAlgorithm, GenericFlow, Report};
+use trafik_runtime::{GenericAlgorithm, GenericFlow, Report};
 use std::time::{Duration, Instant};
 
 #[derive(Default)]

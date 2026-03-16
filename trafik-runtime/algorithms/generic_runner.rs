@@ -2,13 +2,13 @@ use std::collections::HashMap;
 
 use crate::bpf::DatapathEvent;
 use anyhow::anyhow;
-use ebpf_ccp_generic::GenericAlgorithm;
+use trafik_runtime::GenericAlgorithm;
 use tracing::{debug, info, warn};
 
 use crate::algorithms::{AlgorithmRunner, CwndUpdate};
 
 struct FlowState {
-    flow: Box<dyn ebpf_ccp_generic::GenericFlow>,
+    flow: Box<dyn trafik_runtime::GenericFlow>,
     last_lost_pkts: u32,
     last_cwnd: u32,
 }

@@ -1,4 +1,4 @@
-use ebpf_ccp_generic::{GenericAlgorithm, GenericFlow, Report};
+use trafik_runtime::{GenericAlgorithm, GenericFlow, Report};
 
 #[derive(Default)]
 pub struct Reno {

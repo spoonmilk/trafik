@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use ebpf_ccp_generic::{FlowKey, Report};
+use trafik_runtime::{FlowKey, Report};
 use lazy_static::lazy_static;
 use libbpf_rs::{Link, MapCore, MapFlags, Object, ObjectBuilder, RingBufferBuilder};
 use std::collections::{HashMap, VecDeque};

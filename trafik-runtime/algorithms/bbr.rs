@@ -13,7 +13,7 @@
 //! This implementation covers `PROBE_BW` and `PROBE_RTT`. STARTUP/DRAIN modes
 //! and finer points such as policing detection are left as future work.
 
-use ebpf_ccp_generic::{GenericAlgorithm, GenericFlow, Report};
+use trafik_runtime::{GenericAlgorithm, GenericFlow, Report};
 use std::time::{Duration, Instant};
 use tracing::{debug, info};
 
