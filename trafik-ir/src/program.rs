@@ -18,7 +18,8 @@ pub struct PlacementReport {
     pub place: Placement,
 }
 
-/// Coarse placement recommendation.
+/// Placement recommendation
+/// Split will require sub-program split placement
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Placement {
     FullKernel,
@@ -53,7 +54,11 @@ impl Program {
 fn accumulate_weights(bindings: &[Binding], user: &mut u32) {
     for b in bindings {
         match b {
-            Binding::Let { safety, cost, .. } => if safety == &Safety::UserOnly { *user += cost },
+            Binding::Let { safety, cost, .. } => {
+                if safety == &Safety::UserOnly {
+                    *user += cost
+                }
+            }
             Binding::If {
                 then_bindings,
                 else_bindings,
@@ -115,9 +120,10 @@ fn check_crossings(
                 let used_vars = vars_in_expr(expr);
                 for v in used_vars {
                     if let Some(def_safety) = def_safety.get(&v)
-                        && def_safety != use_safety {
-                            *count += 1;
-                        }
+                        && def_safety != use_safety
+                    {
+                        *count += 1;
+                    }
                 }
             }
             Binding::If {
