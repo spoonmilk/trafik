@@ -10,15 +10,15 @@ Vagrant.configure('2') do |config|
   # I use VirtualBox but this
   # looks pretty similar on any of them
   config.vm.box = 'bento/ubuntu-24.04'
-  config.vm.hostname = 'ebpf-ccp-dev'
+  config.vm.hostname = 'trafik-dev'
   config.vm.provider 'virtualbox' do |vb|
     vb.gui = false
     vb.memory = '4096'
     vb.cpus = 4
-    vb.name = 'ebpf-ccp-dev'
+    vb.name = 'trafik-dev'
     vb.customize ['modifyvm', :id, '--nested-hw-virt', 'on']
   end
-  config.vm.synced_folder './src', '/home/src', create: true
+  config.vm.synced_folder '.', '/home/trafik', create: true
 
   ### Network Configurations
 
