@@ -165,14 +165,13 @@ impl Bbr {
             debug!("PROBE_RTT: reached target inflight");
         }
 
-        if let Some(done_time) = self.probe_rtt_done_timestamp {
-            if now.duration_since(done_time) >= Duration::from_millis(PROBE_RTT_DURATION_MS) {
+        if let Some(done_time) = self.probe_rtt_done_timestamp
+            && now.duration_since(done_time) >= Duration::from_millis(PROBE_RTT_DURATION_MS) {
                 self.mode = BbrMode::ProbeBw(ProbeBwPhase::Drain);
                 self.probe_bw_timer = now;
                 self.min_rtt_timeout = now + self.probe_rtt_interval;
                 info!(min_rtt_us = self.min_rtt_us, "Exiting PROBE_RTT mode");
             }
-        }
     }
 }
 
