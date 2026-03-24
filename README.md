@@ -88,6 +88,8 @@ Solution:
 
 Still trying to fix this one. I just power the VM off, pray, then restart
 
+## Notes
+
 > This repo was created and written by Alex Khosrowshahi (Brown '27) for research
 under Professor Akshay Narayan as part of the CCP project.
 A large part of the code is taken from the `ccp-project/generic-cong-avoid` repository.
