@@ -1,6 +1,6 @@
 # TRAFIK!
  
- [!NOTE]
+> [!NOTE]
 > This is an open research repository. It is very much in progress and much of the documentation
 > below is currently deprecated! Expect things in this repo to be broken, half-baked, and badly
 > documented for a while.
